@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Sphere</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0f1a;
+    --bg-elevated: #121826;
+    --bg-card: #161e2e;
+    --bg-hover: #1c2639;
+    --border: rgba(99, 140, 255, 0.12);
+    --border-strong: rgba(99, 140, 255, 0.25);
+    --text: #e8eeff;
+    --text-muted: #8b9bb8;
+    --accent: #4d8bff;
+    --accent-soft: rgba(77, 139, 255, 0.15);
+    --accent-glow: rgba(77, 139, 255, 0.35);
+    --radius: 16px;
+    --radius-sm: 12px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+  .shell { display: flex; min-height: 100vh; }
+  .sidebar { width: 270px; background: var(--bg-elevated); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 50; transition: transform 0.25s ease; }
+  .sidebar-header { padding: 22px 20px 18px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); }
+  .logo-sphere { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(145deg, #6ba3ff, #3b6ef5 55%, #2554d6); box-shadow: 0 4px 16px var(--accent-glow), inset 0 -2px 6px rgba(0,0,0,0.25); position: relative; flex-shrink: 0; }
+  .logo-sphere::after { content: ''; position: absolute; top: 7px; left: 9px; width: 11px; height: 7px; background: rgba(255,255,255,0.45); border-radius: 50%; filter: blur(1px); }
+  .logo-text { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.35rem; letter-spacing: -0.03em; background: linear-gradient(90deg, #8bb4ff, #4d8bff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .nav { flex: 1; padding: 12px 10px 20px; overflow-y: auto; }
+  .nav-section { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); padding: 14px 12px 6px; }
+  .nav-item { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 10px; color: var(--text-muted); font-weight: 500; font-size: 0.9rem; cursor: pointer; transition: all 0.15s; border: none; background: transparent; width: 100%; text-align: left; font-family: inherit; text-decoration: none; }
+  .nav-item:hover { background: var(--bg-hover); color: var(--text); }
+  .nav-item.active { background: var(--accent-soft); color: var(--accent); }
+  .nav-item .icon { width: 22px; text-align: center; font-size: 1rem; flex-shrink: 0; opacity: 0.9; }
+  .sidebar-footer { padding: 14px 16px; border-top: 1px solid var(--border); font-size: 0.75rem; color: var(--text-muted); text-align: center; }
+  .main { flex: 1; margin-left: 270px; min-height: 100vh; display: flex; flex-direction: column; }
+  .topbar { padding: 14px 24px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--border); background: rgba(11, 15, 26, 0.88); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 40; }
+  .menu-toggle { display: none; background: var(--bg-card); border: 1px solid var(--border); color: var(--text); width: 40px; height: 40px; border-radius: 10px; cursor: pointer; align-items: center; justify-content: center; font-size: 1.1rem; }
+  .search-wrap { flex: 1; max-width: 520px; position: relative; }
+  .search-wrap input { width: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 11px 14px 11px 40px; color: var(--text); font-size: 0.92rem; font-family: inherit; outline: none; }
+  .search-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .search-wrap input::placeholder { color: var(--text-muted); }
+  .search-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
+  .topbar-actions { display: flex; gap: 10px; margin-left: auto; }
+  .btn { font-family: inherit; font-weight: 600; font-size: 0.86rem; padding: 9px 15px; border-radius: 10px; border: none; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-primary { background: linear-gradient(135deg, #5a9bff, #3b6ef5); color: white; box-shadow: 0 4px 14px var(--accent-glow); }
+  .btn-primary:hover { filter: brightness(1.08); transform: translateY(-1px); }
+  .btn-ghost { background: var(--bg-card); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--bg-hover); }
+  .content { padding: 26px; flex: 1; }
+  .page { display: none; }
+  .page.active { display: block; animation: fadeIn 0.22s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+  .page-title { font-family: 'Outfit', sans-serif; font-size: 1.7rem; font-weight: 700; margin-bottom: 5px; letter-spacing: -0.02em; }
+  .page-sub { color: var(--text-muted); font-size: 0.93rem; margin-bottom: 24px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
+  .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; cursor: pointer; transition: all 0.2s; text-decoration: none; color: inherit; display: flex; flex-direction: column; gap: 9px; }
+  .card:hover { background: var(--bg-hover); border-color: var(--border-strong); transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,0,0,0.25); }
+  .card-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.35rem; background: var(--accent-soft); }
+  .card-icon.green { background: rgba(52, 211, 153, 0.15); }
+  .card-icon.purple { background: rgba(167, 139, 250, 0.15); }
+  .card-icon.orange { background: rgba(251, 146, 60, 0.15); }
+  .card-icon.pink { background: rgba(244, 114, 182, 0.15); }
+  .card-icon.cyan { background: rgba(34, 211, 238, 0.15); }
+  .card h3 { font-size: 0.98rem; font-weight: 600; }
+  .card p { font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; }
+  .hero { background: linear-gradient(135deg, rgba(77,139,255,0.16), rgba(59,110,245,0.07)); border: 1px solid var(--border-strong); border-radius: 18px; padding: 24px 28px; margin-bottom: 28px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .hero-sphere { width: 68px; height: 68px; border-radius: 50%; background: linear-gradient(145deg, #6ba3ff, #3b6ef5 55%, #2554d6); box-shadow: 0 8px 26px var(--accent-glow), inset 0 -3px 8px rgba(0,0,0,0.25); position: relative; flex-shrink: 0; }
+  .hero-sphere::after { content: ''; position: absolute; top: 13px; left: 15px; width: 17px; height: 11px; background: rgba(255,255,255,0.45); border-radius: 50%; filter: blur(1.5px); }
+  .hero-text h2 { font-family: 'Outfit', sans-serif; font-size: 1.4rem; margin-bottom: 5px; }
+  .hero-text p { color: var(--text-muted); font-size: 0.92rem; max-width: 460px; line-height: 1.5; }
+  .result-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; margin-top: 22px; }
+  .result-box h3 { font-size: 1.02rem; margin-bottom: 11px; }
+  .ai-chat { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); display: flex; flex-direction: column; height: min(500px, 68vh); overflow: hidden; }
+  .ai-messages { flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+  .msg { max-width: 85%; padding: 11px 14px; border-radius: 13px; font-size: 0.9rem; line-height: 1.5; }
+  .msg.bot { background: var(--bg); border: 1px solid var(--border); align-self: flex-start; border-bottom-left-radius: 4px; }
+  .msg.user { background: var(--accent-soft); border: 1px solid var(--border-strong); align-self: flex-end; border-bottom-right-radius: 4px; }
+  .ai-input-row { display: flex; gap: 10px; padding: 12px; border-top: 1px solid var(--border); }
+  .ai-input-row input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 11px 13px; color: var(--text); font-size: 0.9rem; font-family: inherit; outline: none; }
+  .ai-input-row input:focus { border-color: var(--accent); }
+  .music-list { display: flex; flex-direction: column; gap: 8px; }
+  .music-item { display: flex; align-items: center; gap: 13px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 11px 14px; cursor: pointer; transition: all 0.15s; }
+  .music-item:hover { background: var(--bg-hover); border-color: var(--border-strong); }
+  .music-item .play-btn { width: 34px; height: 34px; border-radius: 50%; background: var(--accent-soft); display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 0.85rem; }
+  .music-item .info { flex: 1; }
+  .music-item .info strong { display: block; font-size: 0.9rem; }
+  .music-item .info span { font-size: 0.76rem; color: var(--text-muted); }
+  .tools-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 13px; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .section-header h3 { font-size: 1.08rem; font-weight: 600; }
+  .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 45; }
+  @media (max-width: 880px) {
+    .sidebar { transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-overlay.open { display: block; }
+    .main { margin-left: 0; }
+    .menu-toggle { display: flex; }
+    .content { padding: 18px 14px; }
+    .topbar { padding: 11px 14px; }
+  }
+</style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-sphere"></div>
+        <span class="logo-text">Sphere</span>
+      </div>
+      <nav class="nav">
+        <div class="nav-section">Main</div>
+        <button class="nav-item active" data-page="home"><span class="icon">⌂</span> Home</button>
+        <button class="nav-item" data-page="ai"><span class="icon">✦</span> Sphere AI</button>
+
+        <div class="nav-section">Games</div>
+        <button class="nav-item" data-page="games"><span class="icon">🎮</span> Games Library</button>
+        <a class="nav-item" href="SphereChess.html" target="_blank" rel="noopener"><span class="icon">♟️</span> SphereChess</a>
+
+        <div class="nav-section">Media</div>
+        <button class="nav-item" data-page="music"><span class="icon">♪</span> Music Library</button>
+
+        <div class="nav-section">Apps & Tools</div>
+        <button class="nav-item" data-page="tools" data-tool="password"><span class="icon">🔑</span> Password Generator</button>
+        <button class="nav-item" data-page="tools" data-tool="color"><span class="icon">🎨</span> Color Picker</button>
+        <button class="nav-item" data-page="tools" data-tool="timer"><span class="icon">⏱</span> Pomodoro Timer</button>
+        <button class="nav-item" data-page="tools" data-tool="notes"><span class="icon">📝</span> Quick Notes</button>
+        <button class="nav-item" data-page="tools" data-tool="units"><span class="icon">📐</span> Unit Converter</button>
+        <button class="nav-item" data-page="tools" data-tool="uuid"><span class="icon">🆔</span> UUID Generator</button>
+        <button class="nav-item" data-page="tools"><span class="icon">⚙</span> All Tools</button>
+      </nav>
+      <div class="sidebar-footer">Sphere · All in one place</div>
+    </aside>
+
+    <div class="sidebar-overlay" id="overlay"></div>
+
+    <div class="main">
+      <header class="topbar">
+        <button class="menu-toggle" id="menuToggle" aria-label="Menu">☰</button>
+        <div class="search-wrap">
+          <span class="search-icon">⌕</span>
+          <input type="text" id="globalSearch" placeholder="Search games, tools, or AI…">
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-ghost" id="randomGameBtn">Random Game</button>
+        </div>
+      </header>
+
+      <div class="content">
+        <!-- HOME -->
+        <div class="page active" id="page-home">
+          <div class="hero">
+            <div class="hero-sphere"></div>
+            <div class="hero-text">
+              <h2>Welcome to Sphere</h2>
+              <p>Your all-in-one hub for games, AI chat, music, and useful tools. Everything lives in the side menu.</p>
+            </div>
+          </div>
+          <div class="section-header"><h3>Quick Access</h3></div>
+          <div class="grid">
+            <div class="card" data-goto="ai"><div class="card-icon purple">✦</div><h3>Sphere AI</h3><p>Chat with Sphere — ask questions or just talk.</p></div>
+            <div class="card" data-goto="games"><div class="card-icon green">🎮</div><h3>Games Library</h3><p>Play browser games including SphereChess.</p></div>
+            <a class="card" href="SphereChess.html" target="_blank" rel="noopener"><div class="card-icon cyan">♟️</div><h3>SphereChess</h3><p>AI opponent, local play, lessons & analysis.</p></a>
+            <div class="card" data-goto="music"><div class="card-icon pink">♪</div><h3>Music Library</h3><p>Ambient tracks and focus playlists.</p></div>
+            <div class="card" data-goto="tools"><div class="card-icon orange">⚙</div><h3>Tools</h3><p>Password, timer, notes, converters & more.</p></div>
+          </div>
+        </div>
+
+        <!-- AI -->
+        <div class="page" id="page-ai">
+          <h1 class="page-title">Sphere AI</h1>
+          <p class="page-sub">Chat with Sphere. Ask questions, brainstorm, or just hang out.</p>
+          <div class="ai-chat">
+            <div class="ai-messages" id="aiMessages"><div class="msg bot">Hey! I'm Sphere. Ask me anything — chess tips, ideas, coding help, or just say hi.</div></div>
+            <div class="ai-input-row">
+              <input type="text" id="aiInput" placeholder="Message Sphere…" autocomplete="off">
+              <button class="btn btn-primary" id="aiSend">Send</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- GAMES -->
+        <div class="page" id="page-games">
+          <h1 class="page-title">Games Library</h1>
+          <p class="page-sub">Browser games ready to play. SphereChess is the flagship title.</p>
+          <div class="grid">
+            <a class="card" href="SphereChess.html" target="_blank" rel="noopener" style="border-color: rgba(77,139,255,0.4); background: linear-gradient(145deg, rgba(77,139,255,0.12), var(--bg-card));">
+              <div class="card-icon cyan">♟️</div>
+              <h3>SphereChess ★</h3>
+              <p>Play AI, local multiplayer, learn chess, and analyze positions. Official Sphere title — open to play now.</p>
+            </a>
+            <div class="card game-card" data-name="Snake"><div class="card-icon green">🐍</div><h3>Classic Snake</h3><p>Eat, grow, don't hit the walls.</p></div>
+            <div class="card game-card" data-name="2048"><div class="card-icon orange">🔢</div><h3>2048</h3><p>Slide tiles and reach 2048.</p></div>
+            <div class="card game-card" data-name="TicTacToe"><div class="card-icon purple">✕</div><h3>Tic-Tac-Toe</h3><p>Classic for two players or vs AI.</p></div>
+            <div class="card game-card" data-name="Memory"><div class="card-icon pink">🃏</div><h3>Memory Match</h3><p>Flip cards and find matching pairs.</p></div>
+            <div class="card game-card" data-name="Pong"><div class="card-icon">🏓</div><h3>Pong</h3><p>The original paddle classic.</p></div>
+            <div class="card game-card" data-name="Flappy"><div class="card-icon cyan">🐦</div><h3>Flappy Bird</h3><p>Tap to fly through the pipes.</p></div>
+            <div class="card game-card" data-name="Reaction"><div class="card-icon green">⚡</div><h3>Reaction Test</h3><p>Click when the screen turns green.</p></div>
+          </div>
+        </div>
+
+        <!-- MUSIC -->
+        <div class="page" id="page-music">
+          <h1 class="page-title">Music Library</h1>
+          <p class="page-sub">Ambient and focus tracks. Click a track to play (visual demo).</p>
+          <div class="music-list">
+            <div class="music-item"><div class="play-btn">▶</div><div class="info"><strong>Focus Flow</strong><span>Ambient · 4:12</span></div></div>
+            <div class="music-item"><div class="play-btn">▶</div><div class="info"><strong>Deep Work</strong><span>Lo-fi · 3:48</span></div></div>
+            <div class="music-item"><div class="play-btn">▶</div><div class="info"><strong>Midnight Drive</strong><span>Synthwave · 5:02</span></div></div>
+            <div class="music-item"><div class="play-btn">▶</div><div class="info"><strong>Rainy Window</strong><span>Ambient · 6:30</span></div></div>
+            <div class="music-item"><div class="play-btn">▶</div><div class="info"><strong>Chess Café</strong><span>Jazz · 4:45</span></div></div>
+            <div class="music-item"><div class="play-btn">▶</div><div class="info"><strong>Sphere Theme</strong><span>Electronic · 3:20</span></div></div>
+          </div>
+        </div>
+
+        <!-- TOOLS -->
+        <div class="page" id="page-tools">
+          <h1 class="page-title">Tools & Utilities</h1>
+          <p class="page-sub">Handy tools built into Sphere. Open each one from the side menu too.</p>
+          <div class="tools-grid">
+            <div class="card" id="tool-password"><div class="card-icon purple">🔑</div><h3>Password Generator</h3><p>Generate a strong random password.</p></div>
+            <div class="card" id="tool-color"><div class="card-icon">🎨</div><h3>Color Picker</h3><p>Pick a color and get HEX / RGB.</p></div>
+            <div class="card" id="tool-timer"><div class="card-icon orange">⏱</div><h3>Pomodoro Timer</h3><p>25-minute focus sessions.</p></div>
+            <div class="card" id="tool-notes"><div class="card-icon green">📝</div><h3>Quick Notes</h3><p>Jot something down. Saved locally.</p></div>
+            <div class="card" id="tool-units"><div class="card-icon cyan">📐</div><h3>Unit Converter</h3><p>Length, weight, temperature.</p></div>
+            <div class="card" id="tool-uuid"><div class="card-icon pink">🆔</div><h3>UUID Generator</h3><p>Generate a random UUID v4.</p></div>
+          </div>
+          <div id="toolResult" style="display:none">
+            <div class="result-box">
+              <h3 id="toolResultTitle">Result</h3>
+              <div id="toolResultBody" style="margin-top:11px;font-size:0.93rem;line-height:1.55"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const pages = document.querySelectorAll('.page');
+const navItems = document.querySelectorAll('.nav-item[data-page]');
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('overlay');
+const menuToggle = document.getElementById('menuToggle');
+
+function showPage(id) {
+  pages.forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const page = document.getElementById('page-' + id);
+  if (page) page.classList.add('active');
+  const matches = document.querySelectorAll('.nav-item[data-page="' + id + '"]');
+  if (matches.length) matches[matches.length - 1].classList.add('active');
+  sidebar.classList.remove('open');
+  overlay.classList.remove('open');
+  window.scrollTo(0, 0);
+}
+
+navItems.forEach(item => {
+  item.addEventListener('click', () => {
+    const page = item.dataset.page;
+    if (!page) return;
+    showPage(page);
+    item.classList.add('active');
+    const tool = item.dataset.tool;
+    if (tool && page === 'tools') {
+      setTimeout(() => {
+        const card = document.getElementById('tool-' + tool);
+        if (card) card.click();
+      }, 40);
+    }
+  });
+});
+
+document.querySelectorAll('[data-goto]').forEach(el => {
+  el.addEventListener('click', () => showPage(el.dataset.goto));
+});
+
+menuToggle.addEventListener('click', () => {
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('open');
+});
+overlay.addEventListener('click', () => {
+  sidebar.classList.remove('open');
+  overlay.classList.remove('open');
+});
+
+document.getElementById('globalSearch').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const q = e.target.value.trim().toLowerCase();
+    if (!q) return;
+    if (q.includes('chess')) { window.open('SphereChess.html', '_blank'); return; }
+    if (q.includes('music')) showPage('music');
+    else if (q.includes('tool') || q.includes('password') || q.includes('timer') || q.includes('note')) showPage('tools');
+    else if (q.includes('ai') || q.includes('chat')) showPage('ai');
+    else if (q.includes('game')) showPage('games');
+    else showPage('home');
+  }
+});
+
+const aiMessages = document.getElementById('aiMessages');
+const aiInput = document.getElementById('aiInput');
+const replies = [
+  "That's a solid question. The simplest approach that still works is usually best.",
+  "Interesting! Focus on the fundamentals first.",
+  "Ha, good one. I'm just a blue sphere, but I appreciate a clever idea.",
+  "If you're stuck on chess: control the center, develop pieces, castle early.",
+  "SphereChess is in the side menu and Games Library.",
+  "I'm here if you need a second opinion.",
+  "Pro tip: take short breaks.",
+  "Best move is often the one that improves your worst piece.",
+  "Nice. Keep going — consistency beats intensity."
+];
+function addMsg(text, isUser) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + (isUser ? 'user' : 'bot');
+  div.textContent = text;
+  aiMessages.appendChild(div);
+  aiMessages.scrollTop = aiMessages.scrollHeight;
+}
+function sendAI() {
+  const text = aiInput.value.trim();
+  if (!text) return;
+  addMsg(text, true);
+  aiInput.value = '';
+  setTimeout(() => {
+    const lower = text.toLowerCase();
+    let reply;
+    if (lower.includes('chess') || lower.includes('spherechess')) reply = "SphereChess is in the side menu and Games Library. Play AI, a friend, take lessons, or analyze positions.";
+    else if (lower.includes('hello') || lower.includes('hi') || lower.includes('hey')) reply = "Hey there! What's on your mind?";
+    else if (lower.includes('name')) reply = "I'm Sphere — a friendly blue circle who likes chess, tools, and good conversation.";
+    else if (lower.includes('help')) reply = "I can chat, point you to games and tools, or give general advice. What do you need?";
+    else reply = replies[Math.floor(Math.random() * replies.length)];
+    addMsg(reply, false);
+  }, 450 + Math.random() * 600);
+}
+document.getElementById('aiSend').addEventListener('click', sendAI);
+aiInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendAI(); });
+
+document.getElementById('randomGameBtn').addEventListener('click', () => {
+  showPage('games');
+  const cards = document.querySelectorAll('#page-games .card');
+  const pick = cards[Math.floor(Math.random() * cards.length)];
+  pick.style.transform = 'scale(1.04)';
+  pick.style.boxShadow = '0 0 0 2px var(--accent)';
+  setTimeout(() => {
+    pick.style.transform = '';
+    pick.style.boxShadow = '';
+    if (pick.href) window.open(pick.href, '_blank');
+    else alert((pick.querySelector('h3')?.textContent || 'Game') + ' — try SphereChess for a full game!');
+  }, 350);
+});
+document.querySelectorAll('.game-card').forEach(card => {
+  card.addEventListener('click', () => alert(card.dataset.name + ' is listed here. For a full game, open SphereChess from the side menu!'));
+});
+
+document.querySelectorAll('.music-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.music-item .play-btn').forEach(b => b.textContent = '▶');
+    const btn = item.querySelector('.play-btn');
+    btn.textContent = '❚❚';
+    setTimeout(() => { btn.textContent = '▶'; }, 2800);
+  });
+});
+
+const toolResult = document.getElementById('toolResult');
+const toolResultTitle = document.getElementById('toolResultTitle');
+const toolResultBody = document.getElementById('toolResultBody');
+function showTool(title, html) {
+  toolResult.style.display = 'block';
+  toolResultTitle.textContent = title;
+  toolResultBody.innerHTML = html;
+  toolResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+document.getElementById('tool-password').addEventListener('click', () => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%&*';
+  let pw = '';
+  for (let i = 0; i < 16; i++) pw += chars[Math.floor(Math.random() * chars.length)];
+  showTool('Password Generator', '<code style="font-size:1.12rem;letter-spacing:0.04em;background:var(--bg);padding:10px 14px;border-radius:8px;display:inline-block">' + pw + '</code><p style="margin-top:11px;color:var(--text-muted);font-size:0.84rem">Click again for a new one.</p>');
+});
+
+document.getElementById('tool-color').addEventListener('click', () => {
+  const r = Math.floor(Math.random()*256), g = Math.floor(Math.random()*256), b = Math.floor(Math.random()*256);
+  const hex = '#' + [r,g,b].map(x => x.toString(16).padStart(2,'0')).join('');
+  showTool('Color Picker', '<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap"><div style="width:60px;height:60px;border-radius:12px;background:' + hex + ';border:1px solid var(--border)"></div><div><div><strong>HEX</strong> ' + hex + '</div><div><strong>RGB</strong> ' + r + ', ' + g + ', ' + b + '</div></div></div><p style="margin-top:11px;color:var(--text-muted);font-size:0.84rem">Click again for another color.</p>');
+});
+
+document.getElementById('tool-timer').addEventListener('click', () => {
+  showTool('Pomodoro Timer', '<p>Classic 25 / 5 focus timer.</p><div style="font-size:2.1rem;font-weight:700;margin:11px 0;font-family:\'Outfit\',sans-serif" id="pomodoroDisplay">25:00</div><button class="btn btn-primary" id="pomodoroStart">Start Focus</button><button class="btn btn-ghost" id="pomodoroReset" style="margin-left:8px">Reset</button>');
+  let time = 25 * 60, interval = null;
+  const display = document.getElementById('pomodoroDisplay');
+  document.getElementById('pomodoroStart').onclick = function() {
+    if (interval) return;
+    this.textContent = 'Running…';
+    interval = setInterval(() => {
+      time--;
+      const m = Math.floor(time / 60), s = time % 60;
+      display.textContent = m + ':' + s.toString().padStart(2,'0');
+      if (time <= 0) { clearInterval(interval); interval = null; display.textContent = 'Done!'; this.textContent = 'Start Focus'; }
+    }, 1000);
+  };
+  document.getElementById('pomodoroReset').onclick = () => {
+    if (interval) clearInterval(interval);
+    interval = null; time = 25 * 60;
+    display.textContent = '25:00';
+    document.getElementById('pomodoroStart').textContent = 'Start Focus';
+  };
+});
+
+document.getElementById('tool-notes').addEventListener('click', () => {
+  const saved = localStorage.getItem('sphere_notes') || '';
+  showTool('Quick Notes', '<textarea id="notesArea" style="width:100%;min-height:130px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:11px;color:var(--text);font-family:inherit;font-size:0.9rem;resize:vertical">' + saved + '</textarea><button class="btn btn-primary" id="notesSave" style="margin-top:10px">Save</button>');
+  document.getElementById('notesSave').onclick = () => {
+    localStorage.setItem('sphere_notes', document.getElementById('notesArea').value);
+    alert('Notes saved in this browser.');
+  };
+});
+
+document.getElementById('tool-units').addEventListener('click', () => {
+  showTool('Unit Converter', '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center"><input type="number" id="unitVal" value="1" style="width:90px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px;color:var(--text)"><select id="unitFrom" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px;color:var(--text)"><option value="km">Kilometers</option><option value="mi">Miles</option><option value="m">Meters</option><option value="ft">Feet</option><option value="kg">Kilograms</option><option value="lb">Pounds</option><option value="c">Celsius</option><option value="f">Fahrenheit</option></select><span>→</span><select id="unitTo" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px;color:var(--text)"><option value="mi">Miles</option><option value="km">Kilometers</option><option value="ft">Feet</option><option value="m">Meters</option><option value="lb">Pounds</option><option value="kg">Kilograms</option><option value="f">Fahrenheit</option><option value="c">Celsius</option></select><button class="btn btn-primary" id="unitConvert">Convert</button></div><div id="unitOut" style="margin-top:12px;font-size:1.1rem;font-weight:600"></div>');
+  document.getElementById('unitConvert').onclick = () => {
+    const v = parseFloat(document.getElementById('unitVal').value) || 0;
+    const from = document.getElementById('unitFrom').value;
+    const to = document.getElementById('unitTo').value;
+    const toBase = { km: x=>x*1000, mi: x=>x*1609.34, m: x=>x, ft: x=>x*0.3048, kg: x=>x, lb: x=>x*0.453592, c: x=>x, f: x=>(x-32)*5/9 };
+    const fromBase = { km: x=>x/1000, mi: x=>x/1609.34, m: x=>x, ft: x=>x/0.3048, kg: x=>x, lb: x=>x/0.453592, c: x=>x, f: x=>x*9/5+32 };
+    const result = fromBase[to](toBase[from](v));
+    document.getElementById('unitOut').textContent = v + ' ' + from + ' = ' + result.toFixed(4) + ' ' + to;
+  };
+});
+
+document.getElementById('tool-uuid').addEventListener('click', () => {
+  const uuid = crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random()*16|0;
+    return (c==='x'?r:(r&0x3|0x8)).toString(16);
+  });
+  showTool('UUID Generator', '<code style="font-size:0.98rem;background:var(--bg);padding:10px 14px;border-radius:8px;display:inline-block;word-break:break-all">' + uuid + '</code><p style="margin-top:11px;color:var(--text-muted);font-size:0.84rem">Click again for a new UUID.</p>');
+});
+</script>
+</body>
+</html>
